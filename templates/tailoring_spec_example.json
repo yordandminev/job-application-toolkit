@@ -1,0 +1,14 @@
+{
+  "replace": [
+    {"startswith": "Lead a team", "text": "Lead an analytics team within Finance as partner to the business unit leadership and account managers"}
+  ],
+  "insert_after": [
+    {"startswith": "Reversed a major", "id": "finance-models",
+     "text": "Built causal impact and recapture models that Finance validated against its own models and approved for planning and deal decisions"}
+  ],
+  "order": {
+    "after": "Lead a team",
+    "bullets": ["Own account management", "Build the business cases", "@finance-models", "Reversed a major"]
+  },
+  "remove": ["Co-design account managers"]
+}
