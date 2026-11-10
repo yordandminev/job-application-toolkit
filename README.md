@@ -29,14 +29,26 @@ Role search ──► Job posting ──► Fit analysis ──► Tailored CV �
 - **Human in the loop.** The agent drafts and checks; I decide what is sent. Every edit request gets pros and cons, not just agreement.
 - **Persistent memory.** Decisions, corrections and style feedback are saved as short memory notes, so a new session does not repeat old mistakes.
 
+## Best practices built in
+
+The rules that make the output hold up in an interview are written down, not left to the model:
+
+- [`docs/positioning-playbook.md`](docs/positioning-playbook.md): how to frame the same facts for manager vs hands-on IC roles, fewer-years postings, startups and flat orgs, finance-function roles; honest headlines; bridging adjacent experience without disclaimers.
+- [`docs/writing-rules.md`](docs/writing-rules.md): house style for CV bullets, cover letters and form answers (facts, numbers, credit, length, tone).
+- [`docs/lessons-learned.md`](docs/lessons-learned.md): the corrections that created each rule, from an invented "using AI" detail to a "very boring" mission answer.
+- [`CLAUDE.md`](CLAUDE.md): the agent's entry point: what to read first, hard rules and the workflow.
+
 ## Repository layout
 
 | Path | What it is |
 |---|---|
+| `CLAUDE.md` | Agent instructions: read order, hard rules, workflow |
 | `skills/` | Claude skills (SKILL.md files) for each step of the workflow |
 | `scripts/tailor_cv.py` | Applies a JSON spec (text swaps, new bullets, reorder, removals) to a DOCX CV while keeping its formatting |
 | `scripts/check_cv_layout.py` | Converts a DOCX to PDF with LibreOffice and checks page count and bullet length |
-| `templates/` | Fit analysis template and a tailoring spec example |
+| `docs/positioning-playbook.md`, `docs/writing-rules.md`, `docs/lessons-learned.md` | Positioning by role type, house style and the corrections behind them |
+| `templates/` | Fit analysis, STAR story and tailoring spec templates |
+| `tests/` | Pytest tests for both scripts, run on every push by GitHub Actions |
 | `docs/folder-structure.md` | The folder and versioning conventions |
 | `examples/` | A fictional, fully anonymized example of a fit analysis |
 
@@ -47,7 +59,8 @@ Role search ──► Job posting ──► Fit analysis ──► Tailored CV �
 - Claude (or another agent that can read skills and work with local files)
 
 ```bash
-pip install python-docx
+pip install -r requirements.txt
+pytest -q
 python scripts/tailor_cv.py base_cv.docx templates/tailoring_spec_example.json tailored_cv.docx
 python scripts/check_cv_layout.py tailored_cv.docx --max-pages 2 --max-lines 3
 ```

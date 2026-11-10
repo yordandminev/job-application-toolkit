@@ -33,25 +33,44 @@ def page_count(pdf):
     return int(re.search(r"Pages:\s+(\d+)", info).group(1))
 
 
-def bullets(pdf):
-    """Yield (first_line, line_count, last_line) for every bullet in the PDF text."""
-    text = subprocess.run(["pdftotext", "-layout", str(pdf), "-"],
-                          capture_output=True, text=True, check=True).stdout
-    current = None
+def parse_bullets(text):
+    """Return (first_line, line_count, last_line) for every bullet in pdftotext -layout output."""
+    found, current = [], None
     for raw in text.splitlines():
         line = raw.strip()
         if line.startswith(BULLET):
             if current:
-                yield current[0], len(current), current[-1]
+                found.append((current[0], len(current), current[-1]))
             current = [line]
         elif current and raw.startswith("  ") and line and not line.startswith("Page "):
             current.append(line)
         else:
             if current:
-                yield current[0], len(current), current[-1]
+                found.append((current[0], len(current), current[-1]))
             current = None
     if current:
-        yield current[0], len(current), current[-1]
+        found.append((current[0], len(current), current[-1]))
+    return found
+
+
+def bullets(pdf):
+    text = subprocess.run(["pdftotext", "-layout", str(pdf), "-"],
+                          capture_output=True, text=True, check=True).stdout
+    return parse_bullets(text)
+
+
+def find_problems(pages, bullet_list, max_pages=2, max_lines=3):
+    """Return a list of human-readable layout problems."""
+    problems = []
+    if pages > max_pages:
+        problems.append(f"{pages} pages (max {max_pages})")
+    for first, n, last in bullet_list:
+        label = first[:70]
+        if n > max_lines:
+            problems.append(f"{n} lines: {label}...")
+        if n > 1 and len(last.split()) == 1:
+            problems.append(f"orphan last word '{last}': {label}...")
+    return problems
 
 
 def main():
@@ -62,18 +81,10 @@ def main():
     ap.add_argument("--keep-pdf", action="store_true", help="save the PDF next to the DOCX")
     args = ap.parse_args()
 
-    problems = []
     with tempfile.TemporaryDirectory() as tmp:
         pdf = to_pdf(args.docx, pathlib.Path(tmp))
         pages = page_count(pdf)
-        if pages > args.max_pages:
-            problems.append(f"{pages} pages (max {args.max_pages})")
-        for first, n, last in bullets(pdf):
-            label = first[:70]
-            if n > args.max_lines:
-                problems.append(f"{n} lines: {label}...")
-            if n > 1 and len(last.split()) == 1:
-                problems.append(f"orphan last word '{last}': {label}...")
+        problems = find_problems(pages, bullets(pdf), args.max_pages, args.max_lines)
         if args.keep_pdf:
             shutil.copy(pdf, args.docx.with_suffix(".pdf"))
 
